@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pause & Breathe</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f7f6f2;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 0 0 4rem;
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+
+  .header p {
+    font-size: 14px;
+    color: #888;
+    font-weight: 300;
+  }
+
+  .timer-card {
+    background: #fff;
+    border: 1px solid #e8e6e0;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  .timer-label {
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .timer-display {
+    font-family: 'DM Serif Display', serif;
+    font-size: 72px;
+    font-weight: 400;
+    color: #1a1a1a;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    letter-spacing: -3px;
+    transition: color 0.3s;
+  }
+
+  .timer-display.urgent { color: #D85A30; }
+
+  .timer-sub {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 1.5rem;
+    min-height: 18px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: #f0eeea;
+    border-radius: 99px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #1D9E75;
+    border-radius: 99px;
+    transition: width 1s linear;
+  }
+
+  .duration-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .dur-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-radius: 99px;
+    border: 1px solid #e0deda;
+    cursor: pointer;
+    background: transparent;
+    color: #888;
+    transition: all 0.15s;
+  }
+
+  .dur-btn.active {
+    background: #f0eeea;
+    color: #1a1a1a;
+    border-color: #ccc;
+    font-weight: 500;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 11px 28px;
+    border-radius: 99px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    background: #fff;
+    color: #1a1a1a;
+  }
+
+  .btn:hover { opacity: 0.8; }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-start {
+    background: #1D9E75;
+    color: #fff;
+    border-color: #1D9E75;
+  }
+
+  .btn-reset {
+    background: #f0eeea;
+    border-color: #e0deda;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: #aaa;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .edit-toggle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: #1D9E75;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+  }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #e8e6e0;
+    border-radius: 10px;
+    padding: 13px 14px;
+    transition: all 0.2s;
+  }
+
+  .check-item:not(.editing) { cursor: pointer; }
+  .check-item:not(.editing):hover { border-color: #ccc; background: #faf9f7; }
+  .check-item.done { opacity: 0.55; }
+
+  .check-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #ccc;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .check-item.done .check-box {
+    background: #1D9E75;
+    border-color: #1D9E75;
+  }
+
+  .check-mark {
+    display: none;
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .check-item.done .check-mark { display: block; }
+
+  .check-content { flex: 1; min-width: 0; }
+
+  .check-name {
+    font-size: 15px;
+    color: #1a1a1a;
+  }
+
+  .check-desc {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 2px;
+  }
+
+  .check-item.done .check-name {
+    text-decoration: line-through;
+    color: #aaa;
+  }
+
+  .edit-fields {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .check-item.editing .edit-fields { display: flex; }
+  .check-item.editing .check-name,
+  .check-item.editing .check-desc { display: none; }
+
+  .edit-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #e0deda;
+    background: #faf9f7;
+    color: #1a1a1a;
+    outline: none;
+    width: 100%;
+  }
+
+  .edit-input:focus { border-color: #bbb; }
+  .edit-input.desc { font-size: 12px; color: #888; }
+
+  .item-actions {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .editing-mode .item-actions { display: flex; }
+
+  .action-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #e0deda;
+    cursor: pointer;
+    background: #f0eeea;
+    color: #888;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .action-btn:hover { opacity: 0.7; }
+  .action-btn.delete { color: #D85A30; border-color: #f5c4b3; background: #faece7; }
+  .action-btn.save { color: #1D9E75; border-color: #9FE1CB; background: #E1F5EE; }
+
+  .drag-handle {
+    display: none;
+    color: #ccc;
+    font-size: 16px;
+    cursor: grab;
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+
+  .editing-mode .drag-handle { display: block; }
+
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .add-input {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #e0deda;
+    background: #fff;
+    color: #1a1a1a;
+    outline: none;
+  }
+
+  .add-input:focus { border-color: #bbb; }
+  .add-input::placeholder { color: #ccc; }
+
+  .add-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #e0deda;
+    background: #f0eeea;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .add-btn:hover { opacity: 0.7; }
+
+  .affirm-card {
+    background: #f0eeea;
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+    border: 1px solid #e8e6e0;
+    margin-bottom: 1.5rem;
+  }
+
+  .affirm-text {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .done-banner {
+    display: none;
+    background: #EAF3DE;
+    border: 1px solid #97C459;
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #3B6D11;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .support-note {
+    text-align: center;
+    font-size: 12px;
+    color: #bbb;
+    line-height: 1.6;
+    padding-top: 0.5rem;
+  }
+
+  .support-note a { color: #1D9E75; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <h1>Pause & breathe</h1>
+    <p>Give yourself a moment before deciding to eat</p>
+  </div>
+
+  <div class="timer-card">
+    <div class="timer-label">Time remaining</div>
+    <div class="timer-display" id="timerDisplay">30:00</div>
+    <div class="timer-sub" id="timerSub">Choose a duration and start when ready</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
+    <div class="duration-row">
+      <button class="dur-btn" onclick="setDur(10, this)">10 min</button>
+      <button class="dur-btn active" onclick="setDur(30, this)">30 min</button>
+      <button class="dur-btn" onclick="setDur(60, this)">60 min</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">Start pause</button>
+      <button class="btn btn-reset" onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+
+  <div class="done-banner" id="doneBanner">Time's up — now check in with yourself. Are you still feeling the urge?</div>
+
+  <div class="section-header">
+    <div class="section-title">Before eating, try one of these</div>
+    <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">Edit list</button>
+  </div>
+
+  <div class="checklist" id="checklist"></div>
+
+  <div class="add-row" id="addRow" style="display:none">
+    <input class="add-input" id="addInput" placeholder="Add an activity..." onkeydown="if(event.key==='Enter')addItem()" />
+    <button class="add-btn" onclick="addItem()">Add</button>
+  </div>
+
+  <div class="affirm-card">
+    <div class="affirm-text" id="affirmText">"The urge will pass. You are stronger than a craving."</div>
+  </div>
+
+  <div class="support-note">
+    If you're struggling, you're not alone.<br>
+    <a href="https://www.allianceforeatingdisorders.com/find-a-therapist/" target="_blank">Find an eating disorder specialist</a> &nbsp;·&nbsp;
+    National Alliance helpline: <a href="tel:18666621235">1-866-662-1235</a>
+  </div>
+</div>
+
+<script>
+const DEFAULT_ITEMS = [
+  { name: "Go for a walk", desc: "Even 5 minutes outside can shift your mood", done: false },
+  { name: "Drink a glass of water", desc: "Thirst and hunger can feel the same", done: false },
+  { name: "Journal your feelings", desc: "Write what you're feeling right now, no filter", done: false },
+  { name: "Call or text a friend", desc: "Connection soothes the urge", done: false },
+  { name: "Do 10 deep breaths", desc: "Inhale 4s, hold 4s, exhale 6s", done: false },
+  { name: "Stretch or do yoga", desc: "Move your body gently for a few minutes", done: false },
+  { name: "Listen to a song you love", desc: "Let yourself really feel the music", done: false },
+];
+
+const AFFIRMATIONS = [
+  '"The urge will pass. You are stronger than a craving."',
+  '"Being kind to yourself is not weakness — it is courage."',
+  '"You deserve care, not punishment."',
+  '"This moment is temporary. You can get through it."',
+  '"Progress, not perfection. Every pause counts."',
+];
+
+let items = JSON.parse(localStorage.getItem('pauseItems')) || JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+let totalSecs = 30 * 60;
+let remaining = totalSecs;
+let running = false;
+let interval = null;
+let affirmIdx = 0;
+let editMode = false;
+
+function saveItems() {
+  localStorage.setItem('pauseItems', JSON.stringify(items));
+}
+
+function setDur(mins, btn) {
+  if (running) return;
+  totalSecs = mins * 60;
+  remaining = totalSecs;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateDisplay();
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateDisplay() {
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  const el = document.getElementById('timerDisplay');
+  el.textContent = pad(m) + ':' + pad(s);
+  el.classList.toggle('urgent', remaining <= 60 && running);
+  document.getElementById('progressFill').style.width = ((remaining / totalSecs) * 100) + '%';
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('startBtn');
+  if (!running) {
+    running = true;
+    btn.textContent = 'Pause';
+    document.getElementById('timerSub').textContent = 'Try an activity below while you wait';
+    document.getElementById('doneBanner').style.display = 'none';
+    interval = setInterval(tick, 1000);
+  } else {
+    running = false;
+    btn.textContent = 'Resume';
+    document.getElementById('timerSub').textContent = 'Paused — take it easy';
+    clearInterval(interval);
+  }
+}
+
+function tick() {
+  if (remaining <= 0) {
+    clearInterval(interval);
+    running = false;
+    document.getElementById('startBtn').textContent = 'Start pause';
+    document.getElementById('timerSub').textContent = 'Great job waiting it out';
+    document.getElementById('doneBanner').style.display = 'block';
+    cycleAffirmation();
+    return;
+  }
+  remaining--;
+  updateDisplay();
+  if (remaining % 120 === 0) cycleAffirmation();
+}
+
+function resetTimer() {
+  clearInterval(interval);
+  running = false;
+  remaining = totalSecs;
+  document.getElementById('startBtn').textContent = 'Start pause';
+  document.getElementById('timerSub').textContent = 'Choose a duration and start when ready';
+  document.getElementById('doneBanner').style.display = 'none';
+  updateDisplay();
+  items.forEach(it => it.done = false);
+  saveItems();
+  renderList();
+}
+
+function cycleAffirmation() {
+  affirmIdx = (affirmIdx + 1) % AFFIRMATIONS.length;
+  document.getElementById('affirmText').textContent = AFFIRMATIONS[affirmIdx];
+}
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editToggle').textContent = editMode ? 'Done editing' : 'Edit list';
+  document.getElementById('addRow').style.display = editMode ? 'flex' : 'none';
+  renderList();
+}
+
+function renderList() {
+  const cl = document.getElementById('checklist');
+  cl.innerHTML = '';
+  if (editMode) cl.classList.add('editing-mode');
+  else cl.classList.remove('editing-mode');
+
+  items.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'check-item' + (item.done && !editMode ? ' done' : '');
+    if (!editMode) div.onclick = () => { items[i].done = !items[i].done; saveItems(); renderList(); };
+
+    div.innerHTML = `
+      <div class="drag-handle">⠿</div>
+      <div class="check-box" onclick="event.stopPropagation(); if(!editMode){items[${i}].done=!items[${i}].done; saveItems(); renderList();}">
+        <div class="check-mark"></div>
+      </div>
+      <div class="check-content">
+        <div class="check-name">${item.name}</div>
+        ${item.desc ? '<div class="check-desc">' + item.desc + '</div>' : ''}
+        <div class="edit-fields">
+          <input class="edit-input" id="name-${i}" value="${item.name}" placeholder="Activity name" />
+          <input class="edit-input desc" id="desc-${i}" value="${item.desc}" placeholder="Short description (optional)" />
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="action-btn save" onclick="saveItem(${i})">Save</button>
+        <button class="action-btn delete" onclick="deleteItem(${i})">Delete</button>
+      </div>
+    `;
+
+    if (editMode) div.classList.add('editing');
+    cl.appendChild(div);
+  });
+}
+
+function saveItem(i) {
+  const name = document.getElementById('name-' + i).value.trim();
+  const desc = document.getElementById('desc-' + i).value.trim();
+  if (!name) return;
+  items[i].name = name;
+  items[i].desc = desc;
+  saveItems();
+  renderList();
+}
+
+function deleteItem(i) {
+  items.splice(i, 1);
+  saveItems();
+  renderList();
+}
+
+function addItem() {
+  const inp = document.getElementById('addInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  items.push({ name: val, desc: '', done: false });
+  inp.value = '';
+  saveItems();
+  renderList();
+}
+
+renderList();
+updateDisplay();
+</script>
+</body>
+</html>
